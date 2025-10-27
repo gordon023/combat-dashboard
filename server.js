@@ -125,6 +125,15 @@ app.delete("/requests/:index", (req, res) => {
   writeJSON("requests.json", r);
   res.json({ success: true });
 });
+//combat
+app.get("/combat", (req, res) => res.json(readJSON("combat.json")));
+app.delete("/combat/:index", (req, res) => {
+  const list = readJSON("combat.json");
+  list.splice(parseInt(req.params.index), 1);
+  writeJSON("combat.json", list);
+  res.json({ success: true });
+});
+
 
 // ---------- serve static pages ----------
 app.get("/", (_, res) => res.sendFile(path.join(publicDir, "index.html")));
@@ -132,4 +141,5 @@ app.get("/dashboard.html", (_, res) => res.sendFile(path.join(publicDir, "dashbo
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+
 
