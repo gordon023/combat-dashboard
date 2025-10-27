@@ -99,3 +99,62 @@ app.listen(PORT, () => {
   console.log(`📂 Uploads folder: ${uploadsPath}`);
   console.log(`📂 Data folder: ${dataPath}`);
 });
+
+// ---------- ADMIN LOGIN (simple, in-memory for demo) ----------
+const ADMIN_USER = process.env.ADMIN_USER || "admin";
+const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
+
+// Login check
+app.post("/login", (req, res) => {
+  const { username, password } = req.body;
+  if (username === ADMIN_USER && password === ADMIN_PASS)
+    res.json({ role: "admin" });
+  else
+    res.json({ role: "guest" });
+});
+
+// ---------- UPDATE & DELETE ROUTES ----------
+app.put("/wallets/:id", async (req, res) => {
+  const wallets = await readJSON(dataPaths.wallets);
+  const index = wallets.findIndex((_, i) => i === parseInt(req.params.id));
+  if (index >= 0) {
+    wallets[index] = { ...wallets[index], ...req.body };
+    await writeJSON(dataPaths.wallets, wallets);
+  }
+  res.json({ ok: true });
+});
+
+app.delete("/wallets/:id", async (req, res) => {
+  const wallets = await readJSON(dataPaths.wallets);
+  wallets.splice(req.params.id, 1);
+  await writeJSON(dataPaths.wallets, wallets);
+  res.json({ ok: true });
+});
+
+app.put("/combats/:id", async (req, res) => {
+  const combats = await readJSON(dataPaths.combats);
+  const index = combats.findIndex((_, i) => i === parseInt(req.params.id));
+  if (index >= 0) {
+    combats[index] = { ...combats[index], ...req.body };
+    await writeJSON(dataPaths.combats, combats);
+  }
+  res.json({ ok: true });
+});
+
+app.delete("/combats/:id", async (req, res) => {
+  const combats = await readJSON(dataPaths.combats);
+  combats.splice(req.params.id, 1);
+  await writeJSON(dataPaths.combats, combats);
+  res.json({ ok: true });
+});
+
+// Guest “request update”
+app.post("/request-update", async (req, res) => {
+  const requestsFile = `${dataPath}/requests.json`;
+  const list = await readJSON(requestsFile);
+  list.push({ ...req.body, time: new Date().toISOString() });
+  await writeJSON(requestsFile, list);
+  res.json({ ok: true });
+});
+
+
