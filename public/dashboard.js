@@ -142,6 +142,60 @@ document.getElementById("uploadCombat").addEventListener("click", async () => {
     <img src="/uploads/${data.filename}" alt="preview" class="mt-2 max-w-sm rounded">
   `;
 });
+// ==========================
+// COMBAT LIST
+// ==========================
+async function loadCombat() {
+  const res = await fetch("/combat");
+  const data = await res.json();
+  const list = document.getElementById("combatList");
+  list.innerHTML = "";
+
+  data
+    .filter(c => role === "admin" || c.name === username)
+    .forEach((c, i) => {
+      const div = document.createElement("div");
+      div.className = "border p-2 mb-2 rounded bg-gray-800";
+      div.innerHTML = `
+        <p><b>${c.name}</b> — Combat Power: <span class="text-green-400">${c.combatPower}</span></p>
+        <small>${new Date(c.date).toLocaleString()}</small><br>
+        <img src="/uploads/${c.filename}" class="mt-2 max-w-xs rounded">
+        ${role === "admin" ? `<br><button data-i="${i}" class="delCombat bg-red-600 mt-2 px-2 rounded">Delete</button>` : ""}
+      `;
+      list.appendChild(div);
+    });
+
+  if (role === "admin") {
+    document.querySelectorAll(".delCombat").forEach(btn => {
+      btn.onclick = async () => {
+        await fetch(`/combat/${btn.dataset.i}`, { method: "DELETE" });
+        loadCombat();
+      };
+    });
+  }
+}
+
+// Load combat list after upload and page load
+document.getElementById("uploadCombat").addEventListener("click", async () => {
+  const file = document.getElementById("combatImage").files[0];
+  if (!file) return alert("Select an image first");
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("name", username);
+
+  const res = await fetch("/upload", { method: "POST", body: formData });
+  const data = await res.json();
+
+  document.getElementById("combatPreview").innerHTML = `
+    <p>Uploaded: ${data.filename}</p>
+    <p>Detected Combat Power: <b>${data.combatPower}</b></p>
+    <img src="/uploads/${data.filename}" alt="preview" class="mt-2 max-w-sm rounded">
+  `;
+  loadCombat();
+});
+
+loadCombat();
 
 
 // ==========================
