@@ -9,9 +9,25 @@ import path from "path";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Ensure folders exist (Render mounts /data & /uploads at runtime)
-await fs.ensureDir("/uploads");
-await fs.ensureDir("/data");
+// Change this
+// await fs.ensureDir("/uploads");
+// await fs.ensureDir("/data");
+
+// To this 👇
+const uploadsPath = process.env.UPLOADS_DIR || "./uploads";
+const dataPath = process.env.DATA_DIR || "./data";
+await fs.ensureDir(uploadsPath);
+await fs.ensureDir(dataPath);
+
+const upload = multer({ dest: uploadsPath });
+
+app.use("/uploads", express.static(uploadsPath));
+
+const dataPaths = {
+  announcements: `${dataPath}/announcements.json`,
+  wallets: `${dataPath}/wallets.json`,
+  combats: `${dataPath}/combats.json`,
+};
 
 const upload = multer({ dest: "/uploads" });
 app.use(cors());
@@ -91,3 +107,4 @@ app.post("/upload", upload.single("image"), async (req, res) => {
 
 // ---------- START ----------
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
