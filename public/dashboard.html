@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Dashboard</title>
+  <title>Combat Dashboard</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="bg-gray-900 text-white min-h-screen">
@@ -22,10 +22,42 @@
       <button class="tabBtn adminOnly" data-tab="requests">Requests</button>
     </nav>
 
-    <section id="announcement" class="tab">Announcement content here</section>
-    <section id="wallet" class="tab hidden">Wallet content here</section>
-    <section id="combat" class="tab hidden">Combat upload area here</section>
-    <section id="requests" class="tab hidden adminOnly">Requests list here</section>
+    <!-- Announcement Section -->
+    <section id="announcement" class="tab">
+      <h2 class="text-lg mb-2">Announcements</h2>
+      <div id="announcementList" class="mb-4"></div>
+
+      <div id="announceAdmin" class="adminOnly">
+        <textarea id="announceText" placeholder="Write announcement..." class="text-black p-2 w-full rounded"></textarea>
+        <button id="postAnnouncement" class="bg-blue-600 px-3 py-1 mt-2 rounded">Post</button>
+      </div>
+    </section>
+
+    <!-- Wallet Section -->
+    <section id="wallet" class="tab hidden">
+      <h2 class="text-lg mb-2">Wallet</h2>
+      <input id="walletFilter" placeholder="Filter by name..." class="text-black p-1 rounded mb-2" />
+      <div id="walletList"></div>
+
+      <div class="mt-4">
+        <input id="walletAmount" type="text" placeholder="Amount" class="text-black p-1 rounded" />
+        <button id="addWallet" class="bg-green-600 px-3 py-1 rounded">Add Wallet</button>
+      </div>
+    </section>
+
+    <!-- Combat Section -->
+    <section id="combat" class="tab hidden">
+      <h2 class="text-lg mb-2">Combat Power Detection</h2>
+      <input type="file" id="combatImage" class="mb-2" />
+      <button id="uploadCombat" class="bg-blue-600 px-3 py-1 rounded">Upload</button>
+      <div id="combatPreview" class="mt-2"></div>
+    </section>
+
+    <!-- Requests Section -->
+    <section id="requests" class="tab hidden adminOnly">
+      <h2 class="text-lg mb-2">Edit Requests from Guests</h2>
+      <div id="requestList"></div>
+    </section>
   </main>
 
   <script src="dashboard.js"></script>
