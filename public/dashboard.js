@@ -1,84 +1,133 @@
-let role = localStorage.getItem("role") || "guest";
-const api = (url, opts = {}) => fetch(url, opts).then(r => r.json());
-
 document.addEventListener("DOMContentLoaded", () => {
-  if (role !== "admin") document.querySelectorAll(".admin-only").forEach(e => e.style.display = "none");
-  loadAnnouncements();
-  loadWallets();
-  loadCombats();
-});
+  const username = localStorage.getItem("username");
+  const role = localStorage.getItem("role");
+  const usernameDisplay = document.getElementById("usernameDisplay");
+  const roleDisplay = document.getElementById("roleDisplay");
+  const requestsTab = document.getElementById("requestsTab");
 
-// ANNOUNCEMENTS
-async function loadAnnouncements() {
-  const data = await api("/announcements");
-  const container = document.getElementById("announcementList");
-  container.innerHTML = data.map((a, i) => `
-    <div class="card">
-      <p>${a.text}</p>
-      <small>${a.time}</small>
-      ${role === "admin" ? `<button onclick="deleteAnnouncement(${i})">Delete</button>` : ""}
-    </div>`).join("");
-}
-async function postAnnouncement() {
-  const text = document.getElementById("announcementText").value;
-  await api("/announcements", { method: "POST", body: JSON.stringify({ text }), headers: {"Content-Type":"application/json"} });
-  loadAnnouncements();
-}
+  if (!username || !role) window.location.href = "/";
 
-// WALLETS
-async function loadWallets() {
-  const data = await api("/wallets");
-  const list = document.getElementById("walletList");
-  list.innerHTML = data.map((w, i) => `
-    <div class="card">
-      <b>${w.name}</b>: ${w.address}
-      ${role === "admin"
-        ? `<button onclick="deleteWallet(${i})">Del</button><button onclick="copyWallet(${i})">Copy</button>`
-        : `<button onclick="requestUpdate('wallet', ${i})">Request Edit</button>`}
-    </div>`).join("");
-}
-async function addWallet() {
-  if (role !== "admin" && localStorage.getItem("walletAdded")) return alert("You can only add once!");
-  const name = walletName.value, address = walletAddress.value;
-  await api("/wallets", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ name, address }) });
-  localStorage.setItem("walletAdded", "true");
-  loadWallets();
-}
-async function deleteWallet(i) { await api(`/wallets/${i}`, { method:"DELETE" }); loadWallets(); }
-async function copyWallet(i) { const data = await api("/wallets"); const item = data[i]; await api("/wallets", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(item) }); loadWallets(); }
+  usernameDisplay.textContent = username;
+  roleDisplay.textContent = role;
 
-// COMBAT
-async function loadCombats() {
-  const data = await api("/combats");
-  const list = document.getElementById("combatList");
-  list.innerHTML = data.map((c, i) => `
-    <div class="card">
-      <b>${c.user}</b> – Combat Power: ${c.combatPower}
-      ${role === "admin"
-        ? `<button onclick="deleteCombat(${i})">Del</button>`
-        : `<button onclick="requestUpdate('combat', ${i})">Request Edit</button>`}
-    </div>`).join("");
-}
-document.getElementById("combatForm").onsubmit = async e => {
-  e.preventDefault();
-  if (role !== "admin" && localStorage.getItem("combatAdded")) return alert("You can only upload once!");
-  const formData = new FormData(e.target);
-  formData.append("user", localStorage.getItem("username") || "Guest");
-  const res = await api("/upload", { method:"POST", body: formData });
-  alert("Detected Combat Power: " + res.combatPower);
-  localStorage.setItem("combatAdded", "true");
-  loadCombats();
-};
-async function deleteCombat(i) { await api(`/combats/${i}`, { method:"DELETE" }); loadCombats(); }
+  if (role === "admin") document.getElementById("announcementForm").style.display = "block";
+  if (role === "admin") requestsTab.style.display = "block";
 
-// GUEST REQUEST UPDATE
-async function requestUpdate(type, id) {
-  const reason = prompt("Enter reason for update:");
-  if (!reason) return;
-  await api("/request-update", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ type, id, reason, user: localStorage.getItem("username") || "Guest" })
+  // Tabs
+  document.querySelectorAll(".tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+      document.getElementById(tab.dataset.tab).classList.add("active");
+    });
   });
-  alert("Request sent to admin!");
-}
+
+  // Logout
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    localStorage.clear();
+    window.location.href = "/";
+  });
+
+  // Wallet filtering
+  const walletFilter = document.getElementById("walletFilter");
+  walletFilter.addEventListener("input", () => {
+    const filter = walletFilter.value.toLowerCase();
+    document.querySelectorAll(".wallet-item").forEach(item => {
+      item.style.display = item.textContent.toLowerCase().includes(filter) ? "block" : "none";
+    });
+  });
+
+  // Placeholder Wallet + Announcement loading
+  loadWallet();
+  loadAnnouncements();
+
+  // Wallet Add
+  document.getElementById("addWallet").addEventListener("click", async () => {
+    const value = document.getElementById("walletValue").value.trim();
+    if (!value) return alert("Enter wallet amount.");
+    const entry = { user: username, value, time: new Date().toISOString() };
+    await fetch("/wallet", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(entry)
+    });
+    document.getElementById("walletValue").value = "";
+    loadWallet();
+  });
+
+  // Announcement Add (admin)
+  document.getElementById("addAnnouncement")?.addEventListener("click", async () => {
+    const text = document.getElementById("announcementText").value.trim();
+    if (!text) return alert("Enter announcement text.");
+    const entry = { user: username, text, time: new Date().toISOString() };
+    await fetch("/announcement", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(entry)
+    });
+    document.getElementById("announcementText").value = "";
+    loadAnnouncements();
+  });
+
+  // Load wallet list
+  async function loadWallet() {
+    const res = await fetch("/wallet");
+    const data = await res.json();
+    const walletList = document.getElementById("walletList");
+    walletList.innerHTML = "";
+    data.forEach((w, i) => {
+      const div = document.createElement("div");
+      div.className = "wallet-item";
+      div.innerHTML = `
+        <div class="wallet-header">
+          <strong>${w.user}</strong> <span>${w.value}</span>
+        </div>
+        ${role === "admin"
+          ? `<button onclick="deleteWallet(${i})">Delete</button>`
+          : `<button onclick="requestEdit('${w.user}', ${i})">Request Edit</button>`}
+      `;
+      walletList.appendChild(div);
+    });
+  }
+
+  // Load announcements
+  async function loadAnnouncements() {
+    const res = await fetch("/announcement");
+    const data = await res.json();
+    const list = document.getElementById("announcementList");
+    list.innerHTML = "";
+    data.forEach((a, i) => {
+      const div = document.createElement("div");
+      div.className = "announcement";
+      div.innerHTML = `
+        <strong>${a.user}</strong>: ${a.text}
+        ${role === "admin"
+          ? `<br><button onclick="deleteAnnouncement(${i})">Delete</button>`
+          : ""}`;
+      list.appendChild(div);
+    });
+  }
+
+  window.deleteWallet = async (i) => {
+    await fetch(`/wallet/${i}`, { method: "DELETE" });
+    loadWallet();
+  };
+
+  window.requestEdit = async (user, index) => {
+    const reason = prompt("Enter your edit request:");
+    if (!reason) return;
+    await fetch("/requests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user, reason, index, time: new Date().toISOString() })
+    });
+    alert("Request sent to admin.");
+  };
+
+  window.deleteAnnouncement = async (i) => {
+    await fetch(`/announcement/${i}`, { method: "DELETE" });
+    loadAnnouncements();
+  };
+});
