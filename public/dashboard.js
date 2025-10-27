@@ -1,222 +1,182 @@
-const user = JSON.parse(localStorage.getItem("user"));
-if (!user) window.location.href = "index.html";
+// public/dashboard.js
+document.addEventListener("DOMContentLoaded", async () => {
+  const user = JSON.parse(localStorage.getItem("user"));
+  const usernameSpan = document.getElementById("username");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const tabs = document.querySelectorAll(".tab");
+  const sections = document.querySelectorAll(".section");
 
-document.getElementById("userDisplay").textContent = `👤 ${user.username} (${user.role})`;
-if (user.role !== "admin") document.querySelectorAll(".adminOnly").forEach(btn => btn.style.display = "none");
+  if (!user) return (window.location.href = "/");
 
-// logout
-document.getElementById("logout").addEventListener("click", () => {
-  localStorage.removeItem("user");
-  window.location.href = "index.html";
-});
+  usernameSpan.textContent = `${user.role}: ${user.username}`;
 
-// Tab switching
-const sections = document.querySelectorAll(".tabSection");
-document.querySelectorAll(".tabBtn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    sections.forEach(s => s.classList.add("hidden"));
-    document.getElementById(btn.dataset.tab).classList.remove("hidden");
-  });
-});
+  // Logout
+  logoutBtn.onclick = () => {
+    localStorage.removeItem("user");
+    window.location.href = "/";
+  };
 
-// ==================== DASHBOARD (Announcements) ====================
-async function loadAnnouncements() {
-  const res = await fetch("/announcement");
-  const list = await res.json();
-  const dash = document.getElementById("dashboard");
-  dash.innerHTML = `<h2>📢 Announcements</h2>`;
+  // Tab switching
+  tabs.forEach((tab) =>
+    tab.addEventListener("click", () => {
+      sections.forEach((sec) => (sec.style.display = "none"));
+      document.getElementById(tab.dataset.target).style.display = "block";
+    })
+  );
 
-  if (user.role === "admin") {
-    dash.innerHTML += `
-      <textarea id="announceText" placeholder="Write announcement..."></textarea>
-      <button id="postAnn">Post Announcement</button>
-    `;
-    document.getElementById("postAnn").onclick = async () => {
-      const text = document.getElementById("announceText").value.trim();
-      if (!text) return alert("Enter text");
-      await fetch("/announcement", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: user.username, role: user.role, text })
-      });
-      loadAnnouncements();
-    };
-  }
+  // Fetch initial data
+  await loadAnnouncements();
+  await loadWallets();
+  await loadCombats();
+  if (user.role === "admin") await loadRequests();
 
-  const listDiv = document.createElement("div");
-  listDiv.className = "announcementList";
-  list.forEach((a, i) => {
-    listDiv.innerHTML += `
-      <div class="announceItem">
-        <p>${a.text}</p>
-        <small>By ${a.author || "Admin"} - ${new Date(a.date).toLocaleString()}</small>
+  // 🔔 ANNOUNCEMENTS
+  async function loadAnnouncements() {
+    const res = await fetch("/api/announcements");
+    const data = await res.json();
+    const list = document.getElementById("announcementsList");
+    list.innerHTML = "";
+
+    data.forEach((a) => {
+      const date = new Date(a.date || Date.now()).toLocaleString();
+      const div = document.createElement("div");
+      div.classList.add("announcement-item");
+      div.innerHTML = `
+        <b>${date}</b><br>${a.text}
         ${
           user.role === "admin"
-            ? `<button onclick="editAnn(${i})">✏️</button>
-               <button onclick="delAnn(${i})">🗑️</button>`
+            ? `<br><button class="edit" data-id="${a.id}">Edit</button>
+               <button class="del" data-id="${a.id}">Delete</button>`
             : ""
         }
-      </div>`;
-  });
-  dash.appendChild(listDiv);
-}
-window.editAnn = async (i) => {
-  const text = prompt("Edit announcement:");
-  if (text) await fetch(`/announcement/${i}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text })
-  });
-  loadAnnouncements();
-};
-window.delAnn = async (i) => {
-  if (confirm("Delete this?")) {
-    await fetch(`/announcement/${i}`, { method: "DELETE" });
-    loadAnnouncements();
+      `;
+      list.appendChild(div);
+    });
+
+    if (user.role === "admin") {
+      document.getElementById("newAnnouncement").style.display = "block";
+    }
   }
-};
 
-// ==================== WALLET ====================
-async function loadWallet() {
-  const res = await fetch("/wallet");
-  const list = await res.json();
-  const wallet = document.getElementById("wallet");
-  wallet.innerHTML = `<h2>💼 Wallet List</h2>`;
-
-  if (user.role === "guest") {
-    wallet.innerHTML += `<button id="addWalletBtn">Add your wallet</button>`;
-    document.getElementById("addWalletBtn").onclick = () => {
-      const w = prompt("Enter your wallet address:");
-      if (!w) return;
-      fetch("/wallet", {
+  document
+    .getElementById("postAnnouncement")
+    .addEventListener("click", async () => {
+      const text = document.getElementById("announcementText").value.trim();
+      if (!text) return alert("Enter announcement text");
+      await fetch("/api/announcements", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: user.username, wallet: w })
-      }).then(() => loadWallet());
-    };
+        body: JSON.stringify({ text }),
+      });
+      document.getElementById("announcementText").value = "";
+      loadAnnouncements();
+    });
+
+  // 💰 WALLET
+  async function loadWallets() {
+    const res = await fetch("/api/wallets");
+    const wallets = await res.json();
+    const table = document.getElementById("walletTableBody");
+    table.innerHTML = "";
+
+    wallets.forEach((w) => {
+      const date = new Date(w.date || Date.now()).toLocaleString();
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${w.name}</td>
+        <td>${w.wallet}</td>
+        <td>${date}</td>
+        <td>
+          ${
+            user.role === "admin"
+              ? `<button data-id="${w.id}" class="delWallet">Del</button>`
+              : `<button data-id="${w.id}" class="reqEdit">Request Edit</button>`
+          }
+        </td>
+      `;
+      table.appendChild(tr);
+    });
+
+    // Delete (admin)
+    if (user.role === "admin") {
+      document.querySelectorAll(".delWallet").forEach((btn) =>
+        btn.addEventListener("click", async () => {
+          await fetch(`/api/wallets/${btn.dataset.id}`, { method: "DELETE" });
+          loadWallets();
+        })
+      );
+    }
+
+    // Request edit (guest)
+    if (user.role === "guest") {
+      document.querySelectorAll(".reqEdit").forEach((btn) =>
+        btn.addEventListener("click", async () => {
+          await fetch("/api/requests", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              user: user.username,
+              target: btn.dataset.id,
+              type: "wallet",
+            }),
+          });
+          alert("Edit request sent to admin");
+        })
+      );
+    }
   }
 
-  let table = `<table border="1" width="100%">
-    <tr><th>Name</th><th>Wallet</th><th>Date</th>${user.role === "admin" ? "<th>Action</th>" : ""}</tr>`;
-  list.forEach((w, i) => {
-    table += `<tr>
-      <td>${w.name}</td>
-      <td>${w.wallet}</td>
-      <td>${new Date(w.date).toLocaleString()}</td>
-      ${
-        user.role === "admin"
-          ? `<td><button onclick="delWallet(${i})">🗑️</button></td>`
-          : ""
-      }
-    </tr>`;
+  document.getElementById("addWalletBtn").addEventListener("click", async () => {
+    const walletText = prompt("Enter your wallet info:");
+    if (!walletText) return;
+    await fetch("/api/wallets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ wallet: walletText }),
+    });
+    loadWallets();
   });
-  table += `</table>`;
-  wallet.innerHTML += table;
-}
-window.delWallet = async (i) => {
-  const list = await fetch("/wallet").then(r => r.json());
-  list.splice(i, 1);
-  await fetch("/wallet", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(list)
-  });
-};
 
-// ==================== COMBAT ====================
-async function loadCombat() {
-  const res = await fetch("/combat");
-  const list = await res.json();
-  const combat = document.getElementById("combat");
-  combat.innerHTML = `<h2>⚔️ Combat Records</h2>`;
+  // ⚔️ COMBAT
+  async function loadCombats() {
+    const res = await fetch("/api/combats");
+    const combats = await res.json();
+    const table = document.getElementById("combatTableBody");
+    table.innerHTML = "";
 
-  if (user.role === "guest") {
-    combat.innerHTML += `
-      <input type="file" id="combatFile">
-      <button id="uploadCombat">Upload & Detect</button>`;
-    document.getElementById("uploadCombat").onclick = async () => {
-      const f = document.getElementById("combatFile").files[0];
-      if (!f) return alert("Select file");
-      const fd = new FormData();
-      fd.append("file", f);
-      fd.append("name", user.username);
-      const res = await fetch("/upload", { method: "POST", body: fd });
-      const out = await res.json();
-      alert(`Detected Combat Power: ${out.combatPower}`);
-      loadCombat();
-    };
+    combats.forEach((c) => {
+      const date = new Date(c.date || Date.now()).toLocaleString();
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${c.name}</td>
+        <td>${c.power}</td>
+        <td>${date}</td>
+        <td><img src="/uploads/${c.image}" width="80"></td>
+        ${
+          user.role === "admin"
+            ? `<td><button data-id="${c.id}" class="delCombat">Del</button></td>`
+            : ""
+        }
+      `;
+      table.appendChild(tr);
+    });
   }
 
-  let table = `<table border="1" width="100%">
-    <tr><th>Name</th><th>Combat Power</th><th>Date</th>${user.role === "admin" ? "<th>Action</th>" : ""}</tr>`;
-  list.forEach((c, i) => {
-    table += `<tr>
-      <td>${c.name}</td>
-      <td>${c.combatPower}</td>
-      <td>${new Date(c.date).toLocaleString()}</td>
-      ${
-        user.role === "admin"
-          ? `<td><button onclick="delCombat(${i})">🗑️</button></td>`
-          : ""
-      }
-    </tr>`;
-  });
-  table += `</table>`;
-  combat.innerHTML += table;
-}
-window.delCombat = async (i) => {
-  await fetch(`/combat/${i}`, { method: "DELETE" });
-  loadCombat();
-};
+  // 📩 REQUESTS (admin only)
+  async function loadRequests() {
+    const res = await fetch("/api/requests");
+    const reqs = await res.json();
+    const list = document.getElementById("requestsList");
+    list.innerHTML = "";
 
-// ==================== REQUESTS (ADMIN ONLY) ====================
-async function loadRequests() {
-  const res = await fetch("/requests");
-  const list = await res.json();
-  const reqs = document.getElementById("requests");
-  reqs.innerHTML = `<h2>📨 Edit Requests</h2>`;
-
-  if (user.role !== "admin") {
-    reqs.innerHTML = `<p>Only admin can view this section.</p>`;
-    return;
+    reqs.forEach((r) => {
+      const div = document.createElement("div");
+      div.innerHTML = `
+        ${r.user} requested edit for ${r.type} [${r.target}]
+        <button class="approveReq" data-id="${r.id}">Approve</button>
+        <button class="denyReq" data-id="${r.id}">Deny</button>
+      `;
+      list.appendChild(div);
+    });
   }
-
-  let table = `<table border="1" width="100%">
-    <tr><th>Name</th><th>Message</th><th>Status</th><th>Date</th><th>Action</th></tr>`;
-  list.forEach((r, i) => {
-    table += `<tr>
-      <td>${r.username}</td>
-      <td>${r.message}</td>
-      <td>${r.status}</td>
-      <td>${new Date(r.date).toLocaleString()}</td>
-      <td>
-        <button onclick="approveReq(${i})">✅</button>
-        <button onclick="denyReq(${i})">❌</button>
-      </td>
-    </tr>`;
-  });
-  table += `</table>`;
-  reqs.innerHTML += table;
-}
-window.approveReq = async (i) => {
-  await fetch(`/requests/${i}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status: "Approved" })
-  });
-  loadRequests();
-};
-window.denyReq = async (i) => {
-  await fetch(`/requests/${i}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status: "Denied" })
-  });
-  loadRequests();
-};
-
-// ==================== INITIAL LOAD ====================
-loadAnnouncements();
-loadWallet();
-loadCombat();
-loadRequests();
+});
