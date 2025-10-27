@@ -230,6 +230,122 @@ async function loadAnnouncements() {
   }
 }
 //updated
+async function loadAnnouncements() {
+  const res = await fetch("/announcement");
+  const data = await res.json();
+  const list = document.getElementById("announcementList");
+  list.innerHTML = "";
+
+  data.forEach((a, i) => {
+    const div = document.createElement("div");
+    div.className = "bg-gray-800 p-3 rounded border border-gray-700";
+    div.innerHTML = `
+      <div class="flex justify-between items-start">
+        <div>
+          <p class="text-sm text-gray-400">${new Date(a.date).toLocaleString()}</p>
+          <p class="mt-1">${a.text}</p>
+        </div>
+        ${role === "admin" ? `
+          <div class="space-x-1">
+            <button class="editAnn bg-yellow-600 px-2 rounded" data-i="${i}">Edit</button>
+            <button class="delAnn bg-red-600 px-2 rounded" data-i="${i}">Del</button>
+          </div>` : ""}
+      </div>
+    `;
+    list.appendChild(div);
+  });
+
+  if (role === "admin") {
+    document.querySelectorAll(".editAnn").forEach(btn => {
+      btn.onclick = async () => {
+        const index = btn.dataset.i;
+        const currentText = data[index].text;
+        const newText = prompt("Edit Announcement:", currentText);
+        if (newText && newText !== currentText) {
+          await fetch(`/announcement/${index}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: newText })
+          });
+          loadAnnouncements();
+        }
+      };
+    });
+
+    document.querySelectorAll(".delAnn").forEach(btn => {
+      btn.onclick = async () => {
+        await fetch(`/announcement/${btn.dataset.i}`, { method: "DELETE" });
+        loadAnnouncements();
+      };
+    });
+  }
+}
+
+document.getElementById("postAnnouncement")?.addEventListener("click", async () => {
+  const text = document.getElementById("announceInput").value.trim();
+  if (!text) return alert("Write something first.");
+  await fetch("/announcement", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text, name: username })
+  });
+  document.getElementById("announceInput").value = "";
+  loadAnnouncements();
+});
+// =========================
+// Announcements updated
+// =========================
+async function loadAnnouncements() {
+  const res = await fetch("/announcement");
+  const data = await res.json();
+  const list = document.getElementById("announcementList");
+  list.innerHTML = "";
+
+  data.forEach((a, i) => {
+    const div = document.createElement("div");
+    div.className = "bg-gray-800 p-3 rounded border border-gray-700";
+    div.innerHTML = `
+      <div class="flex justify-between items-start">
+        <div>
+          <p class="text-sm text-gray-400">${new Date(a.date).toLocaleString()}</p>
+          <p class="mt-1">${a.text}</p>
+        </div>
+        ${role === "admin" ? `
+          <div class="space-x-1">
+            <button class="editAnn bg-yellow-600 px-2 rounded" data-i="${i}">Edit</button>
+            <button class="delAnn bg-red-600 px-2 rounded" data-i="${i}">Del</button>
+          </div>` : ""}
+      </div>
+    `;
+    list.appendChild(div);
+  });
+
+  if (role === "admin") {
+    document.querySelectorAll(".editAnn").forEach(btn => {
+      btn.onclick = async () => {
+        const index = btn.dataset.i;
+        const currentText = data[index].text;
+        const newText = prompt("Edit Announcement:", currentText);
+        if (newText && newText !== currentText) {
+          await fetch(`/announcement/${index}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: newText })
+          });
+          loadAnnouncements();
+        }
+      };
+    });
+
+    document.querySelectorAll(".delAnn").forEach(btn => {
+      btn.onclick = async () => {
+        await fetch(`/announcement/${btn.dataset.i}`, { method: "DELETE" });
+        loadAnnouncements();
+      };
+    });
+  }
+}
+
 document.getElementById("postAnnouncement")?.addEventListener("click", async () => {
   const text = document.getElementById("announceInput").value.trim();
   if (!text) return alert("Write something first.");
@@ -243,6 +359,7 @@ document.getElementById("postAnnouncement")?.addEventListener("click", async () 
 });
 
 loadAnnouncements();
+
 
 
 // Initial Load
