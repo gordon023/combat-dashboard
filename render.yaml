@@ -1,18 +1,12 @@
+
 services:
   - type: web
     name: combat-dashboard
     env: node
-    region: singapore
     buildCommand: npm install
-    startCommand: node server.js
+    startCommand: npm start
+    plan: free
     envVars:
-      NODE_ENV: production
-      DATA_DIR: /data
-      UPLOADS_DIR: /uploads
-    disk:
-      - name: data
-        mountPath: /data
-        sizeGB: 1
-      - name: uploads
-        mountPath: /uploads
-        sizeGB: 1
+      - key: NODE_ENV
+        value: production
+
