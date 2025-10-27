@@ -9,41 +9,29 @@ import path from "path";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Change this
-// await fs.ensureDir("/uploads");
-// await fs.ensureDir("/data");
-
-// To this 👇
+// ✅ Safe folder setup
 const uploadsPath = process.env.UPLOADS_DIR || "./uploads";
 const dataPath = process.env.DATA_DIR || "./data";
 await fs.ensureDir(uploadsPath);
 await fs.ensureDir(dataPath);
 
+// ✅ Multer setup (one declaration only)
 const upload = multer({ dest: uploadsPath });
 
-app.use("/uploads", express.static(uploadsPath));
-
-const dataPaths = {
-  announcements: `${dataPath}/announcements.json`,
-  wallets: `${dataPath}/wallets.json`,
-  combats: `${dataPath}/combats.json`,
-};
-
-const upload = multer({ dest: "/uploads" });
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
-app.use("/uploads", express.static("/uploads"));
+app.use("/uploads", express.static(uploadsPath));
 
-// JSON file helpers
+// ✅ Helper functions
 const readJSON = async (file, def = []) =>
   (await fs.pathExists(file)) ? JSON.parse(await fs.readFile(file, "utf8")) : def;
 const writeJSON = (file, data) => fs.writeFile(file, JSON.stringify(data, null, 2));
 
 const dataPaths = {
-  announcements: "/data/announcements.json",
-  wallets: "/data/wallets.json",
-  combats: "/data/combats.json",
+  announcements: `${dataPath}/announcements.json`,
+  wallets: `${dataPath}/wallets.json`,
+  combats: `${dataPath}/combats.json`,
 };
 
 // ---------- ANNOUNCEMENTS ----------
@@ -68,13 +56,13 @@ app.post("/wallets", async (req, res) => {
   res.json({ ok: true });
 });
 
-// ---------- COMBAT POWER UPLOAD + OCR ----------
+// ---------- COMBAT UPLOAD + OCR ----------
 app.post("/upload", upload.single("image"), async (req, res) => {
   try {
     const filePath = req.file.path;
-    const cropped = `/uploads/cropped-${Date.now()}.png`;
+    const cropped = path.join(uploadsPath, `cropped-${Date.now()}.png`);
 
-    // crop bottom-left area
+    // crop bottom-left 25% height, 40% width
     const img = sharp(filePath);
     const { width, height } = await img.metadata();
     const cropHeight = Math.floor(height * 0.25);
@@ -106,5 +94,8 @@ app.post("/upload", upload.single("image"), async (req, res) => {
 });
 
 // ---------- START ----------
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`📂 Uploads folder: ${uploadsPath}`);
+  console.log(`📂 Data folder: ${dataPath}`);
+});
