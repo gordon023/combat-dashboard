@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wallet Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    form {
+      margin-bottom: 20px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    input {
+      padding: 8px;
+      margin: 5px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px;
+      width: 100%;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      max-width: 600px;
+      margin: 20px auto;
+    }
+    th, td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    .delete-btn {
+      padding: 6px 12px;
+      background-color: #f44336;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .delete-btn:hover {
+      background-color: #da190b;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Wallet Manager</h1>
+
+<form id="walletForm">
+  <input type="text" id="playerName" placeholder="Player Name" required />
+  <input type="text" id="walletAddress" placeholder="Wallet Address" required />
+  <button type="submit">Add Wallet</button>
+</form>
+
+<table>
+  <thead>
+    <tr>
+      <th>Player Name</th>
+      <th>Wallet Address</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="walletTableBody">
+    <!-- Wallet entries will appear here -->
+  </tbody>
+</table>
+
+<script>
+  const API_URL = 'https://your-render-url'; // <-- Replace with your backend URL
+
+  let walletData = [];
+
+  // Fetch wallets and render
+  function fetchWallets() {
+    fetch(`${API_URL}/wallets`)
+      .then(res => res.json())
+      .then(data => {
+        walletData = data;
+        renderWallets();
+      })
+      .catch(err => console.error('Error fetching wallets:', err));
+  }
+
+  // Render wallet data in table
+  function renderWallets() {
+    const tbody = document.getElementById('walletTableBody');
+    tbody.innerHTML = '';
+    walletData.forEach(wallet => {
+      const tr = document.createElement('tr');
+
+      const nameTd = document.createElement('td');
+      nameTd.textContent = wallet.name;
+      tr.appendChild(nameTd);
+
+      const addressTd = document.createElement('td');
+      addressTd.textContent = wallet.wallet;
+      tr.appendChild(addressTd);
+
+      const actionsTd = document.createElement('td');
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.onclick = () => deleteWallet(wallet.id);
+      actionsTd.appendChild(deleteBtn);
+      tr.appendChild(actionsTd);
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Add new wallet
+  document.getElementById('walletForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('playerName').value.trim();
+    const wallet = document.getElementById('walletAddress').value.trim();
+
+    if (name && wallet) {
+      try {
+        const res = await fetch(`${API_URL}/wallets`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, wallet }),
+        });
+        if (res.ok) {
+          document.getElementById('walletForm').reset();
+          fetchWallets();
+        } else {
+          alert('Failed to add wallet');
+        }
+      } catch (err) {
+        console.error('Error adding wallet:', err);
+      }
+    }
+  });
+
+  // Delete wallet
+  function deleteWallet(id) {
+    fetch(`${API_URL}/wallets/${id}`, {
+      method: 'DELETE',
+    })
+      .then(res => res.json())
+      .then(() => fetchWallets())
+      .catch(err => console.error('Error deleting wallet:', err));
+  }
+
+  // Initial fetch
+  fetchWallets();
+</script>
+
+</body>
+</html>
