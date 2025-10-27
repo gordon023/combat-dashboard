@@ -6,6 +6,7 @@ import fs from "fs";
 import path from "path";
 import bodyParser from "body-parser";
 import multer from "multer";
+import Tesseract from "tesseract.js";
 
 const app = express();
 const __dirname = path.resolve();
@@ -81,8 +82,33 @@ app.delete("/wallet/:index", (req, res) => {
 });
 
 // ---------- combat uploads (placeholder) ----------
-app.post("/upload", upload.single("file"), (req, res) => {
-  res.json({ success: true, filename: req.file.filename });
+app.post("/upload", upload.single("file"), async (req, res) => {
+  try {
+    const filePath = path.join(uploadDir, req.file.filename);
+    console.log("🔍 OCR processing:", filePath);
+
+    const { data: { text } } = await Tesseract.recognize(filePath, "eng");
+    const match = text.match(/Combat\s*Power\s*[:\-]?\s*(\d{5,6})/i);
+    const combatPower = match ? match[1] : "Not found";
+
+    const combats = readJSON("combat.json");
+    combats.push({
+      name: req.body.name || "Guest",
+      filename: req.file.filename,
+      combatPower,
+      date: new Date().toISOString()
+    });
+    writeJSON("combat.json", combats);
+
+    res.json({
+      success: true,
+      filename: req.file.filename,
+      combatPower
+    });
+  } catch (err) {
+    console.error("OCR error:", err);
+    res.status(500).json({ success: false, error: "OCR failed" });
+  }
 });
 
 // ---------- guest edit requests ----------
@@ -106,3 +132,4 @@ app.get("/dashboard.html", (_, res) => res.sendFile(path.join(publicDir, "dashbo
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+
