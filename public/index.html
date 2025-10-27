@@ -1,94 +1,73 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Login - Combat Dashboard</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Combat Dashboard Login</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    /* Dark neon gradient + centered card (old style) */
-    html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;}
-    body{
-      background: linear-gradient(135deg,#07103a 0%,#2b0f4a 100%);
-      display:flex;align-items:center;justify-content:center;color:#e6eef8;
+    body {
+      background: radial-gradient(circle at top left, #0a0a0a, #121212 70%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+      font-family: "Segoe UI", sans-serif;
     }
-    .card{
-      width:360px;padding:28px;border-radius:14px;background:rgba(12,18,33,0.6);
-      box-shadow: 0 10px 40px rgba(10, 20, 50, 0.6);backdrop-filter: blur(6px);
-      border:1px solid rgba(255,255,255,0.04);
+    .login-container {
+      background: #1f1f1f;
+      padding: 2rem 2.5rem;
+      border-radius: 10px;
+      box-shadow: 0 0 25px rgba(0,0,0,0.5);
+      width: 320px;
+      text-align: center;
     }
-    h1{margin:0 0 6px 0;color:#7dd3fc;text-shadow:0 6px 20px rgba(0,0,0,0.6);}
-    .desc{color:#9fb4c9;font-size:13px;margin-bottom:14px;}
-    input{width:100%;padding:12px;border-radius:10px;border:none;margin:8px 0;background:#0b1b2f;color:#e6eef8;}
-    .row{display:flex;gap:8px;margin-top:6px;}
-    button{flex:1;padding:10px;border-radius:10px;border:none;cursor:pointer;font-weight:700;}
-    .btn-admin{background:linear-gradient(90deg,#0ea5e9,#7c3aed);color:#071226;box-shadow:0 6px 18px rgba(124,58,237,0.14);}
-    .btn-guest{background:#0b1220;color:#9fb4c9;border:1px solid rgba(255,255,255,0.03);}
-    .muted{font-size:12px;color:#94a3b8;margin-top:10px;text-align:center;}
+    h2 {
+      margin-bottom: 1.5rem;
+      color: #0a84ff;
+    }
+    input {
+      display: block;
+      width: 100%;
+      margin: 0.6rem 0;
+      padding: 0.6rem;
+      background: #222;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 1rem;
+    }
+    button {
+      width: 100%;
+      padding: 0.6rem;
+      background: #0a84ff;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 1rem;
+      margin-top: 1rem;
+      cursor: pointer;
+    }
+    button:hover { background: #006ae0; }
+    .footer-text {
+      font-size: 0.8rem;
+      color: #999;
+      margin-top: 1.2rem;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Welcome</h1>
-    <div class="desc">Login as Admin or continue as Guest</div>
-
-    <div id="adminArea" style="display:none;">
-      <input id="adminUser" placeholder="username" value="">
-      <input id="adminPass" placeholder="password" type="password">
-      <div class="row">
-        <button id="adminLoginBtn" class="btn-admin">Admin Login</button>
-        <button id="backToChoice" class="btn-guest">Back</button>
-      </div>
-    </div>
-
-    <div id="choiceArea">
-      <div class="row">
-        <button id="showAdmin" class="btn-admin">Admin</button>
-        <button id="showGuest" class="btn-guest">Guest</button>
-      </div>
-      <div style="margin-top:12px;">
-        <input id="guestName" placeholder="Guest name (auto-filled if saved)">
-        <div style="display:flex;gap:8px;margin-top:8px;">
-          <button id="guestLoginBtn" class="btn-admin" style="flex:1">Continue as Guest</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="muted">Default admin credentials: <strong>admin / 0101</strong></div>
+  <div class="login-container">
+    <h2>⚔️ Combat Dashboard</h2>
+    <form id="loginForm">
+      <input type="text" id="username" placeholder="Enter name" required>
+      <input type="password" id="password" placeholder="Password (admin only)">
+      <button type="submit">Login</button>
+    </form>
+    <div class="footer-text">Guest? Leave password blank.</div>
   </div>
 
-<script>
-  // auto-fill saved guest
-  const saved = localStorage.getItem('guestName') || '';
-  document.getElementById('guestName').value = saved;
-
-  const showAdmin = document.getElementById('showAdmin');
-  const showGuest = document.getElementById('showGuest');
-  const adminArea = document.getElementById('adminArea');
-  const choiceArea = document.getElementById('choiceArea');
-  const backToChoice = document.getElementById('backToChoice');
-
-  showAdmin.onclick = () => { adminArea.style.display='block'; choiceArea.style.display='none'; };
-  backToChoice.onclick = () => { adminArea.style.display='none'; choiceArea.style.display='block'; };
-
-  document.getElementById('adminLoginBtn').onclick = () => {
-    const u = document.getElementById('adminUser').value.trim();
-    const p = document.getElementById('adminPass').value.trim();
-    if (u === 'admin' && p === '0101') {
-      localStorage.setItem('currentUser', 'Admin');
-      localStorage.setItem('role', 'admin');
-      window.location.href = '/dashboard.html';
-    } else alert('Invalid admin credentials');
-  };
-
-  document.getElementById('guestLoginBtn').onclick = () => {
-    const name = (document.getElementById('guestName').value || '').trim();
-    if (!name) return alert('Enter your name');
-    localStorage.setItem('guestName', name);
-    localStorage.setItem('currentUser', name);
-    localStorage.setItem('role', 'guest');
-    window.location.href = '/dashboard.html';
-  };
-
-</script>
+  <script src="login.js"></script>
 </body>
 </html>
