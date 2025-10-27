@@ -159,6 +159,32 @@ app.delete("/combat/:index", (req, res) => {
   res.json({ success: true });
 });//
 
+// =========================
+// Announcements
+// =========================
+app.get("/announcement", (req, res) => res.json(readJSON("announcements.json")));
+
+app.post("/announcement", (req, res) => {
+  const list = readJSON("announcements.json");
+  list.unshift({ ...req.body, date: new Date() });
+  writeJSON("announcements.json", list);
+  res.json({ success: true });
+});
+
+app.put("/announcement/:i", (req, res) => {
+  const list = readJSON("announcements.json");
+  list[req.params.i].text = req.body.text;
+  writeJSON("announcements.json", list);
+  res.json({ success: true });
+});
+
+app.delete("/announcement/:i", (req, res) => {
+  const list = readJSON("announcements.json");
+  list.splice(req.params.i, 1);
+  writeJSON("announcements.json", list);
+  res.json({ success: true });
+});
+
 
 // ---------- serve static pages ----------
 app.get("/", (_, res) => res.sendFile(path.join(publicDir, "index.html")));
@@ -166,6 +192,7 @@ app.get("/dashboard.html", (_, res) => res.sendFile(path.join(publicDir, "dashbo
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+
 
 
 
