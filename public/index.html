@@ -1,72 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Combat Dashboard Login</title>
-  <link rel="stylesheet" href="style.css">
-  <style>
-    body {
-      background: radial-gradient(circle at top left, #0a0a0a, #121212 70%);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      color: #fff;
-      font-family: "Segoe UI", sans-serif;
-    }
-    .login-container {
-      background: #1f1f1f;
-      padding: 2rem 2.5rem;
-      border-radius: 10px;
-      box-shadow: 0 0 25px rgba(0,0,0,0.5);
-      width: 320px;
-      text-align: center;
-    }
-    h2 {
-      margin-bottom: 1.5rem;
-      color: #0a84ff;
-    }
-    input {
-      display: block;
-      width: 100%;
-      margin: 0.6rem 0;
-      padding: 0.6rem;
-      background: #222;
-      border: 1px solid #333;
-      border-radius: 6px;
-      color: #fff;
-      font-size: 1rem;
-    }
-    button {
-      width: 100%;
-      padding: 0.6rem;
-      background: #0a84ff;
-      border: none;
-      border-radius: 6px;
-      color: #fff;
-      font-size: 1rem;
-      margin-top: 1rem;
-      cursor: pointer;
-    }
-    button:hover { background: #006ae0; }
-    .footer-text {
-      font-size: 0.8rem;
-      color: #999;
-      margin-top: 1.2rem;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <title>Login</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-  <div class="login-container">
-    <h2>⚔️ Combat Dashboard</h2>
-    <form id="loginForm">
-      <input type="text" id="username" placeholder="Enter name" required>
-      <input type="password" id="password" placeholder="Password (admin only)">
-      <button type="submit">Login</button>
-    </form>
-    <div class="footer-text">Guest? Leave password blank.</div>
-  </div>
+<body class="flex flex-col items-center justify-center h-screen bg-gray-900 text-white">
+  <h1 class="text-2xl mb-4">Combat Dashboard Login</h1>
+  <form id="loginForm" class="flex flex-col gap-3 w-64">
+    <input type="text" id="username" placeholder="Username" class="p-2 rounded text-black" required />
+    <input type="password" id="password" placeholder="Password (leave blank for guest)" class="p-2 rounded text-black" />
+    <button type="submit" class="bg-blue-600 hover:bg-blue-500 rounded p-2">Login</button>
+  </form>
 
   <script src="login.js"></script>
 </body>
