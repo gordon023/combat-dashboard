@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Combat Dashboard</title>
+<style>
+  body {
+    margin: 0;
+    font-family: "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, #0a0f24, #1b1640);
+    color: #fff;
+  }
+  header {
+    background: rgba(0,0,30,0.8);
+    padding: 15px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #007bff;
+  }
+  .tabs button {
+    background: transparent;
+    color: #fff;
+    border: none;
+    margin: 0 10px;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: 0.2s;
+  }
+  .tabs button:hover, .tabs button.active {
+    background: #007bff;
+  }
+  .content {
+    padding: 20px;
+  }
+  input, textarea {
+    width: 100%;
+    padding: 8px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 6px;
+    background: #1b1f3b;
+    color: #fff;
+  }
+  button.action {
+    background: #007bff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+  }
+  #preview {
+    margin-top: 10px;
+    max-width: 300px;
+  }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { border-bottom: 1px solid #333; padding: 8px; text-align: left; }
+</style>
+</head>
+<body>
+<header>
+  <div>Welcome, <span id="username"></span></div>
+  <div class="tabs">
+    <button onclick="showTab('announce')" id="tab-announce" class="active">Announcements</button>
+    <button onclick="showTab('wallet')" id="tab-wallet">Wallet</button>
+    <button onclick="showTab('combat')" id="tab-combat">Combat Power</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<div class="content">
+  <section id="announce" class="tab-section">
+    <h2>Announcements</h2>
+    <div id="announce-list"></div>
+    <div id="announce-form" style="display:none;">
+      <textarea id="announce-input" placeholder="Write announcement..."></textarea>
+      <button class="action" onclick="postAnnouncement()">Post</button>
+    </div>
+  </section>
+
+  <section id="wallet" class="tab-section" style="display:none;">
+    <h2>Wallets</h2>
+    <input type="text" id="wallet-input" placeholder="Enter wallet address">
+    <button class="action" onclick="addWallet()">Add Wallet</button>
+    <table id="wallet-table">
+      <thead><tr><th>Name</th><th>Wallet</th><th>Time</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section id="combat" class="tab-section" style="display:none;">
+    <h2>Combat Power Detection</h2>
+    <input type="file" id="combat-file" accept="image/*">
+    <img id="preview" src="" alt="">
+    <div id="combat-result"></div>
+  </section>
+</div>
+
+<script>
+const API = window.location.origin;
+const role = localStorage.getItem("role");
+const user = localStorage.getItem("currentUser");
+document.getElementById("username").innerText = user || "Guest";
+if (role === "admin") document.getElementById("announce-form").style.display = "block";
+
+function showTab(id) {
+  document.querySelectorAll(".tab-section").forEach(s=>s.style.display="none");
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
+  document.getElementById(id).style.display="block";
+  document.getElementById("tab-"+id).classList.add("active");
+}
+
+async function loadAnnouncements(){
+  const res = await fetch(`${API}/announcements`);
+  const data = await res.json();
+  const div = document.getElementById("announce-list");
+  div.innerHTML = data.map(a=>`<p><b>${a.time}</b><br>${a.text}</p>`).join("") || "<i>No announcements</i>";
+}
+async function postAnnouncement(){
+  const text = document.getElementById("announce-input").value.trim();
+  if (!text) return;
+  await fetch(`${API}/announcements`,{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ text })
+  });
+  document.getElementById("announce-input").value="";
+  loadAnnouncements();
+}
+
+async function loadWallets(){
+  const res = await fetch(`${API}/wallets`);
+  const data = await res.json();
+  const tbody = document.querySelector("#wallet-table tbody");
+  tbody.innerHTML = data.map(w=>`<tr><td>${w.name}</td><td>${w.wallet}</td><td>${new Date(w.time).toLocaleString()}</td></tr>`).join("");
+}
+async function addWallet(){
+  const wallet = document.getElementById("wallet-input").value.trim();
+  if (!wallet) return;
+  await fetch(`${API}/wallets`,{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ name:user, wallet })
+  });
+  document.getElementById("wallet-input").value="";
+  loadWallets();
+}
+
+document.getElementById("combat-file").addEventListener("change", async e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const preview = document.getElementById("preview");
+  preview.src = URL.createObjectURL(file);
+  const fd = new FormData();
+  fd.append("image", file);
+  fd.append("user", user);
+  const res = await fetch(`${API}/upload`,{ method:"POST", body:fd });
+  const data = await res.json();
+  document.getElementById("combat-result").innerHTML =
+    data.combatPower ? `<p>Detected Combat Power: <b>${data.combatPower}</b></p>` : `<p>Not detected</p>`;
+});
+
+function logout(){
+  localStorage.clear();
+  window.location.href="index.html";
+}
+
+loadAnnouncements();
+loadWallets();
+</script>
+</body>
+</html>
