@@ -1,210 +1,222 @@
-// dashboard.js
-const username = localStorage.getItem("username");
-const role = localStorage.getItem("role");
-if (!username || !role) location.href = "/";
+const user = JSON.parse(localStorage.getItem("user"));
+if (!user) window.location.href = "index.html";
 
-document.getElementById('userInfo').textContent = `${role.toUpperCase()} : ${username}`;
-
-// Tabs
-const tabs = document.querySelectorAll('.tab');
-tabs.forEach(t => {
-  t.addEventListener('click', () => {
-    tabs.forEach(x => x.classList.remove('active'));
-    t.classList.add('active');
-    document.querySelectorAll('.card').forEach(c => c.classList.add('hidden'));
-    document.getElementById(t.dataset.tab).classList.remove('hidden');
-  });
-});
-
-// show requests tab for admin
-if (role === 'admin') {
-  document.getElementById('requestsTabBtn').classList.remove('hidden');
-  document.getElementById('announcementForm').classList.remove('hidden');
-}
+document.getElementById("userDisplay").textContent = `👤 ${user.username} (${user.role})`;
+if (user.role !== "admin") document.querySelectorAll(".adminOnly").forEach(btn => btn.style.display = "none");
 
 // logout
-document.getElementById('logoutBtn').addEventListener('click', () => {
-  localStorage.clear();
-  location.href = '/';
+document.getElementById("logout").addEventListener("click", () => {
+  localStorage.removeItem("user");
+  window.location.href = "index.html";
 });
 
-// ----------------- ANNOUNCEMENTS -----------------
-async function loadAnnouncements(){
-  const res = await fetch('/announcement');
-  const list = await res.json();
-  const container = document.getElementById('announcementList');
-  container.innerHTML = '';
-  list.forEach((a,i) => {
-    const div = document.createElement('div');
-    div.style.marginBottom = '8px';
-    div.innerHTML = `
-      <div style="font-size:12px;color:#9fb4c9">${new Date(a.date).toLocaleString()}</div>
-      <div style="margin-top:6px">${a.text}</div>
-    `;
-    if (role === 'admin'){
-      const editBtn = document.createElement('button'); editBtn.textContent='Edit'; editBtn.className='btn ghost';
-      const delBtn = document.createElement('button'); delBtn.textContent='Del'; delBtn.className='btn'; delBtn.style.marginLeft='8px';
-      editBtn.onclick = async () => {
-        const newText = prompt('Edit announcement', a.text);
-        if (!newText) return;
-        await fetch(`/announcement/${i}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ role:'admin', text:newText }) });
-        loadAnnouncements();
-      };
-      delBtn.onclick = async () => {
-        if (!confirm('Delete announcement?')) return;
-        await fetch(`/announcement/${i}`, { method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ role:'admin' }) });
-        loadAnnouncements();
-      };
-      const ctrl = document.createElement('div'); ctrl.style.marginTop='6px';
-      ctrl.appendChild(editBtn); ctrl.appendChild(delBtn);
-      div.appendChild(ctrl);
-    }
-    container.appendChild(div);
+// Tab switching
+const sections = document.querySelectorAll(".tabSection");
+document.querySelectorAll(".tabBtn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    sections.forEach(s => s.classList.add("hidden"));
+    document.getElementById(btn.dataset.tab).classList.remove("hidden");
   });
+});
+
+// ==================== DASHBOARD (Announcements) ====================
+async function loadAnnouncements() {
+  const res = await fetch("/announcement");
+  const list = await res.json();
+  const dash = document.getElementById("dashboard");
+  dash.innerHTML = `<h2>📢 Announcements</h2>`;
+
+  if (user.role === "admin") {
+    dash.innerHTML += `
+      <textarea id="announceText" placeholder="Write announcement..."></textarea>
+      <button id="postAnn">Post Announcement</button>
+    `;
+    document.getElementById("postAnn").onclick = async () => {
+      const text = document.getElementById("announceText").value.trim();
+      if (!text) return alert("Enter text");
+      await fetch("/announcement", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: user.username, role: user.role, text })
+      });
+      loadAnnouncements();
+    };
+  }
+
+  const listDiv = document.createElement("div");
+  listDiv.className = "announcementList";
+  list.forEach((a, i) => {
+    listDiv.innerHTML += `
+      <div class="announceItem">
+        <p>${a.text}</p>
+        <small>By ${a.author || "Admin"} - ${new Date(a.date).toLocaleString()}</small>
+        ${
+          user.role === "admin"
+            ? `<button onclick="editAnn(${i})">✏️</button>
+               <button onclick="delAnn(${i})">🗑️</button>`
+            : ""
+        }
+      </div>`;
+  });
+  dash.appendChild(listDiv);
 }
-document.getElementById('postAnnouncementBtn')?.addEventListener('click', async () => {
-  if (role !== 'admin') return alert('Only admin can post announcements');
-  const text = document.getElementById('announcementText').value.trim();
-  if (!text) return alert('Enter announcement');
-  await fetch('/announcement', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ role:'admin', text, name: username }) });
-  document.getElementById('announcementText').value = '';
+window.editAnn = async (i) => {
+  const text = prompt("Edit announcement:");
+  if (text) await fetch(`/announcement/${i}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text })
+  });
   loadAnnouncements();
-});
-loadAnnouncements();
+};
+window.delAnn = async (i) => {
+  if (confirm("Delete this?")) {
+    await fetch(`/announcement/${i}`, { method: "DELETE" });
+    loadAnnouncements();
+  }
+};
 
-// ----------------- WALLET -----------------
-const walletTable = document.getElementById('walletTable');
-document.getElementById('showAddWallet').addEventListener('click', () => {
-  document.getElementById('addWalletForm').classList.toggle('hidden');
-});
+// ==================== WALLET ====================
+async function loadWallet() {
+  const res = await fetch("/wallet");
+  const list = await res.json();
+  const wallet = document.getElementById("wallet");
+  wallet.innerHTML = `<h2>💼 Wallet List</h2>`;
 
-document.getElementById('addWalletBtn').addEventListener('click', async () => {
-  const val = document.getElementById('walletInput').value.trim();
-  if (!val) return alert('Enter wallet info');
-  await fetch('/wallet', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name: username, wallet: val, date: new Date().toISOString() }) });
-  document.getElementById('walletInput').value = '';
-  document.getElementById('addWalletForm').classList.add('hidden');
-  loadWallets();
-});
+  if (user.role === "guest") {
+    wallet.innerHTML += `<button id="addWalletBtn">Add your wallet</button>`;
+    document.getElementById("addWalletBtn").onclick = () => {
+      const w = prompt("Enter your wallet address:");
+      if (!w) return;
+      fetch("/wallet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: user.username, wallet: w })
+      }).then(() => loadWallet());
+    };
+  }
 
-async function loadWallets(){
-  const res = await fetch('/wallet');
-  const data = await res.json();
-  walletTable.innerHTML = '';
-  data.forEach((w,i) => {
-    // show all entries to admin; guests see all but request only their own
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
+  let table = `<table border="1" width="100%">
+    <tr><th>Name</th><th>Wallet</th><th>Date</th>${user.role === "admin" ? "<th>Action</th>" : ""}</tr>`;
+  list.forEach((w, i) => {
+    table += `<tr>
       <td>${w.name}</td>
       <td>${w.wallet}</td>
       <td>${new Date(w.date).toLocaleString()}</td>
-      <td></td>
-    `;
-    const actions = tr.querySelector('td:last-child');
-    if (role === 'admin'){
-      const del = document.createElement('button'); del.textContent='Delete'; del.className='btn'; del.onclick = async () => {
-        if (!confirm('Delete wallet?')) return;
-        await fetch(`/wallet/${i}`, { method:'DELETE' });
-        loadWallets();
-      };
-      actions.appendChild(del);
-    } else {
-      // guest: can request edit only on own entries
-      if (w.name === username){
-        const reqBtn = document.createElement('button'); reqBtn.textContent='Request Edit'; reqBtn.className='btn ghost';
-        reqBtn.onclick = async () => {
-          const note = prompt('Describe the change you want:');
-          if (!note) return;
-          await fetch('/request', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name: username, type:'wallet', target: i, note, date: new Date().toISOString() }) });
-          alert('Request sent to admin');
-        };
-        actions.appendChild(reqBtn);
+      ${
+        user.role === "admin"
+          ? `<td><button onclick="delWallet(${i})">🗑️</button></td>`
+          : ""
       }
-    }
-    walletTable.appendChild(tr);
+    </tr>`;
   });
+  table += `</table>`;
+  wallet.innerHTML += table;
 }
-loadWallets();
+window.delWallet = async (i) => {
+  const list = await fetch("/wallet").then(r => r.json());
+  list.splice(i, 1);
+  await fetch("/wallet", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(list)
+  });
+};
 
-// ----------------- COMBAT -----------------
-document.getElementById('uploadCombatBtn').addEventListener('click', async () => {
-  const file = document.getElementById('combatImage').files[0];
-  if (!file) return alert('Select an image');
-  const fd = new FormData();
-  fd.append('file', file);
-  fd.append('name', username);
-  const res = await fetch('/upload', { method:'POST', body: fd });
-  const j = await res.json();
-  if (!j.success) return alert('Upload failed');
-  document.getElementById('combatPreview').innerHTML = `<div>Detected: <b>${j.combatPower}</b></div><img src="/uploads/${j.filename}" class="thumb" />`;
-  loadCombats();
-});
+// ==================== COMBAT ====================
+async function loadCombat() {
+  const res = await fetch("/combat");
+  const list = await res.json();
+  const combat = document.getElementById("combat");
+  combat.innerHTML = `<h2>⚔️ Combat Records</h2>`;
 
-const combatTable = document.getElementById('combatTable');
-async function loadCombats(){
-  const res = await fetch('/combat');
-  const data = await res.json();
-  combatTable.innerHTML = '';
-  data.forEach((c,i) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
+  if (user.role === "guest") {
+    combat.innerHTML += `
+      <input type="file" id="combatFile">
+      <button id="uploadCombat">Upload & Detect</button>`;
+    document.getElementById("uploadCombat").onclick = async () => {
+      const f = document.getElementById("combatFile").files[0];
+      if (!f) return alert("Select file");
+      const fd = new FormData();
+      fd.append("file", f);
+      fd.append("name", user.username);
+      const res = await fetch("/upload", { method: "POST", body: fd });
+      const out = await res.json();
+      alert(`Detected Combat Power: ${out.combatPower}`);
+      loadCombat();
+    };
+  }
+
+  let table = `<table border="1" width="100%">
+    <tr><th>Name</th><th>Combat Power</th><th>Date</th>${user.role === "admin" ? "<th>Action</th>" : ""}</tr>`;
+  list.forEach((c, i) => {
+    table += `<tr>
       <td>${c.name}</td>
       <td>${c.combatPower}</td>
       <td>${new Date(c.date).toLocaleString()}</td>
-      <td><img src="/uploads/${c.filename}" class="thumb" /></td>
-      <td></td>
-    `;
-    const actions = tr.querySelector('td:last-child');
-    if (role === 'admin'){
-      const del = document.createElement('button'); del.textContent='Delete'; del.className='btn';
-      del.onclick = async () => {
-        if (!confirm('Delete record?')) return;
-        await fetch(`/combat/${i}`, { method:'DELETE' });
-        loadCombats();
-      };
-      actions.appendChild(del);
-    } else {
-      if (c.name === username){
-        const req = document.createElement('button'); req.textContent='Request Edit'; req.className='btn ghost';
-        req.onclick = async () => {
-          const note = prompt('Describe the change you want:');
-          if (!note) return;
-          await fetch('/request', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name: username, type:'combat', target: i, note, date: new Date().toISOString() })});
-          alert('Request sent to admin');
-        };
-        actions.appendChild(req);
+      ${
+        user.role === "admin"
+          ? `<td><button onclick="delCombat(${i})">🗑️</button></td>`
+          : ""
       }
-    }
-    combatTable.appendChild(tr);
+    </tr>`;
   });
+  table += `</table>`;
+  combat.innerHTML += table;
 }
-loadCombats();
+window.delCombat = async (i) => {
+  await fetch(`/combat/${i}`, { method: "DELETE" });
+  loadCombat();
+};
 
-// ----------------- REQUESTS (admin only) -----------------
-async function loadRequests(){
-  if (role !== 'admin') return;
-  const res = await fetch('/request');
-  const data = await res.json();
-  const list = document.getElementById('requestList');
-  list.innerHTML = '';
-  data.forEach((r,i) => {
-    const div = document.createElement('div');
-    div.style.marginBottom='8px';
-    div.innerHTML = `<div><b>${r.name}</b> requested edit for ${r.type} #${r.target}</div><div class="muted">${new Date(r.date).toLocaleString()}</div>`;
-    const appr = document.createElement('button'); appr.textContent='Approve'; appr.className='btn';
-    const deny = document.createElement('button'); deny.textContent='Deny'; deny.className='btn ghost'; deny.style.marginLeft='8px';
-    appr.onclick = async () => {
-      // Approve simply removes request; admin can later modify the item manually
-      await fetch(`/request/approve/${i}`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ role:'admin' }) });
-      loadRequests(); loadWallets(); loadCombats();
-    };
-    deny.onclick = async () => {
-      await fetch(`/request/deny/${i}`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ role:'admin' }) });
-      loadRequests();
-    };
-    div.appendChild(document.createElement('br'));
-    div.appendChild(appr); div.appendChild(deny);
-    list.appendChild(div);
+// ==================== REQUESTS (ADMIN ONLY) ====================
+async function loadRequests() {
+  const res = await fetch("/requests");
+  const list = await res.json();
+  const reqs = document.getElementById("requests");
+  reqs.innerHTML = `<h2>📨 Edit Requests</h2>`;
+
+  if (user.role !== "admin") {
+    reqs.innerHTML = `<p>Only admin can view this section.</p>`;
+    return;
+  }
+
+  let table = `<table border="1" width="100%">
+    <tr><th>Name</th><th>Message</th><th>Status</th><th>Date</th><th>Action</th></tr>`;
+  list.forEach((r, i) => {
+    table += `<tr>
+      <td>${r.username}</td>
+      <td>${r.message}</td>
+      <td>${r.status}</td>
+      <td>${new Date(r.date).toLocaleString()}</td>
+      <td>
+        <button onclick="approveReq(${i})">✅</button>
+        <button onclick="denyReq(${i})">❌</button>
+      </td>
+    </tr>`;
   });
+  table += `</table>`;
+  reqs.innerHTML += table;
 }
+window.approveReq = async (i) => {
+  await fetch(`/requests/${i}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: "Approved" })
+  });
+  loadRequests();
+};
+window.denyReq = async (i) => {
+  await fetch(`/requests/${i}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: "Denied" })
+  });
+  loadRequests();
+};
+
+// ==================== INITIAL LOAD ====================
+loadAnnouncements();
+loadWallet();
+loadCombat();
 loadRequests();
