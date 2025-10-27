@@ -30,6 +30,7 @@ function writeJSON(file, data) {
   fs.writeFileSync(path.join(dataDir, file), JSON.stringify(data, null, 2));
 }
 
+
 // ---------- file upload ----------
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
@@ -162,28 +163,47 @@ app.delete("/combat/:index", (req, res) => {
 // =========================
 // Announcements
 // =========================
-app.get("/announcement", (req, res) => res.json(readJSON("announcements.json")));
+// --- helpers (already in your server) ---
+
+// --- ANNOUNCEMENTS: only admin may POST/PUT/DELETE ---
+app.get("/announcement", (req, res) => {
+  const list = readJSON("announcements.json");
+  res.json(list);
+});
 
 app.post("/announcement", (req, res) => {
+  const { role, text, name } = req.body || {};
+  if (role !== "admin") return res.status(403).json({ success: false, error: "Forbidden" });
+
   const list = readJSON("announcements.json");
-  list.unshift({ ...req.body, date: new Date() });
+  list.unshift({ text, author: name || "Admin", date: new Date().toISOString() });
   writeJSON("announcements.json", list);
   res.json({ success: true });
 });
 
 app.put("/announcement/:i", (req, res) => {
+  const { role, text } = req.body || {};
+  if (role !== "admin") return res.status(403).json({ success: false, error: "Forbidden" });
+
   const list = readJSON("announcements.json");
-  list[req.params.i].text = req.body.text;
+  const i = Number(req.params.i);
+  if (!list[i]) return res.status(404).json({ success: false, error: "Not found" });
+  list[i].text = text;
+  list[i].date = new Date().toISOString();
   writeJSON("announcements.json", list);
   res.json({ success: true });
 });
 
 app.delete("/announcement/:i", (req, res) => {
+  const role = req.body?.role || req.query?.role;
+  if (role !== "admin") return res.status(403).json({ success: false, error: "Forbidden" });
   const list = readJSON("announcements.json");
-  list.splice(req.params.i, 1);
+  const i = Number(req.params.i);
+  if (list[i]) list.splice(i, 1);
   writeJSON("announcements.json", list);
   res.json({ success: true });
 });
+
 
 
 // ---------- serve static pages ----------
@@ -192,6 +212,7 @@ app.get("/dashboard.html", (_, res) => res.sendFile(path.join(publicDir, "dashbo
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+
 
 
 
