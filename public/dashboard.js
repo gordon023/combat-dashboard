@@ -128,15 +128,21 @@ document.getElementById("addWallet").addEventListener("click", async () => {
 document.getElementById("uploadCombat").addEventListener("click", async () => {
   const file = document.getElementById("combatImage").files[0];
   if (!file) return alert("Select an image first");
+
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("name", username);
+
   const res = await fetch("/upload", { method: "POST", body: formData });
   const data = await res.json();
+
   document.getElementById("combatPreview").innerHTML = `
     <p>Uploaded: ${data.filename}</p>
+    <p>Detected Combat Power: <b>${data.combatPower}</b></p>
     <img src="/uploads/${data.filename}" alt="preview" class="mt-2 max-w-sm rounded">
   `;
 });
+
 
 // ==========================
 // REQUESTS (Admin only)
