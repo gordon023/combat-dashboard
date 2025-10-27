@@ -126,27 +126,41 @@ app.delete("/requests/:index", (req, res) => {
   writeJSON("requests.json", r);
   res.json({ success: true });
 }); // update 
-app.get("/request", (req, res) => res.json(readJSON("requests.json")));
-
-app.post("/request", (req, res) => {
+// requests listing (admin only)
+app.get("/request", (req, res) => {
   const list = readJSON("requests.json");
-  list.push({ ...req.body, date: new Date() });
+  res.json(list);
+});
+
+// guest posts a request
+app.post("/request", (req, res) => {
+  const { name, type, target, note } = req.body || {};
+  if (!name) return res.status(400).json({ success: false, error: "Missing name" });
+  const list = readJSON("requests.json");
+  list.push({ name, type, target, note, date: new Date().toISOString() });
   writeJSON("requests.json", list);
   res.json({ success: true });
 });
 
+// admin approves (simple remove; you can add actual apply logic)
 app.post("/request/approve/:i", (req, res) => {
+  const role = req.body?.role || req.query?.role;
+  if (role !== "admin") return res.status(403).json({ success: false, error: "Forbidden" });
   const list = readJSON("requests.json");
-  list.splice(req.params.i, 1);
+  const i = Number(req.params.i);
+  if (list[i]) list.splice(i,1);
   writeJSON("requests.json", list);
-  res.json({ success: true, message: "Approved and removed from list." });
+  res.json({ success: true });
 });
 
 app.post("/request/deny/:i", (req, res) => {
+  const role = req.body?.role || req.query?.role;
+  if (role !== "admin") return res.status(403).json({ success: false, error: "Forbidden" });
   const list = readJSON("requests.json");
-  list.splice(req.params.i, 1);
+  const i = Number(req.params.i);
+  if (list[i]) list.splice(i,1);
   writeJSON("requests.json", list);
-  res.json({ success: true, message: "Denied and removed from list." });
+  res.json({ success: true });
 });
 
 
@@ -212,6 +226,7 @@ app.get("/dashboard.html", (_, res) => res.sendFile(path.join(publicDir, "dashbo
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+
 
 
 
