@@ -2,40 +2,142 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Combat Dashboard</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background: #0e0e0e;
+      color: #e0e0e0;
+    }
+    header {
+      background: #1b1b1b;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #333;
+    }
+    header h2 {
+      color: #0a84ff;
+      margin: 0;
+    }
+    .user-info {
+      font-size: 0.9rem;
+      color: #bbb;
+    }
+    .tabs {
+      display: flex;
+      background: #1a1a1a;
+      border-bottom: 1px solid #222;
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 1rem;
+      cursor: pointer;
+      color: #aaa;
+    }
+    .tab.active {
+      color: #0a84ff;
+      background: #111;
+      font-weight: bold;
+    }
+    .tab-content {
+      display: none;
+      padding: 2rem;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    button {
+      background: #0a84ff;
+      color: #fff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #006ae0;
+    }
+    input, textarea {
+      background: #1f1f1f;
+      color: #fff;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 0.5rem;
+      margin: 0.3rem 0;
+      width: 100%;
+    }
+    .wallet-item, .announcement {
+      background: #1c1c1c;
+      padding: 1rem;
+      margin: 0.5rem 0;
+      border-radius: 6px;
+      border: 1px solid #333;
+    }
+    .wallet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .filter-box {
+      margin-bottom: 1rem;
+    }
+  </style>
 </head>
 <body>
-  <div id="dashboard" class="container">
+  <header>
     <h2>⚔️ Combat Dashboard</h2>
+    <div class="user-info">
+      Logged in as: <span id="usernameDisplay"></span> (<span id="roleDisplay"></span>)
+      <button id="logoutBtn">Logout</button>
+    </div>
+  </header>
 
-    <section id="announcements">
-      <h3>📢 Announcements</h3>
-      <div id="announcementList"></div>
-      <div id="announcementForm" class="admin-only">
-        <input type="text" id="announcementText" placeholder="Write an announcement...">
-        <button onclick="postAnnouncement()">Post</button>
-      </div>
-    </section>
+  <div class="tabs">
+    <div class="tab active" data-tab="dashboard">Dashboard</div>
+    <div class="tab" data-tab="wallet">Wallet</div>
+    <div class="tab" data-tab="combat">Combat</div>
+    <div class="tab" data-tab="requests" id="requestsTab" style="display:none;">Requests</div>
+  </div>
 
-    <section id="wallets">
-      <h3>💰 Wallets</h3>
-      <div id="walletList"></div>
-      <div id="walletForm">
-        <input type="text" id="walletName" placeholder="Name">
-        <input type="text" id="walletAddress" placeholder="Wallet Address">
-        <button onclick="addWallet()">Add</button>
-      </div>
-    </section>
+  <div id="dashboard" class="tab-content active">
+    <h3>📢 Announcements</h3>
+    <div id="announcementList"></div>
 
-    <section id="combats">
-      <h3>⚔️ Combat Power Detection</h3>
-      <div id="combatList"></div>
-      <form id="combatForm" enctype="multipart/form-data">
-        <input type="file" id="combatImage" name="image" accept="image/*">
-        <button type="submit">Upload & Detect</button>
-      </form>
-    </section>
+    <div id="announcementForm" style="display:none;">
+      <h4>Create Announcement</h4>
+      <textarea id="announcementText" rows="3" placeholder="Enter announcement..."></textarea>
+      <button id="addAnnouncement">Post</button>
+    </div>
+  </div>
+
+  <div id="wallet" class="tab-content">
+    <h3>💰 Wallet</h3>
+    <div class="filter-box">
+      <input type="text" id="walletFilter" placeholder="Filter by name..." />
+    </div>
+    <div id="walletList"></div>
+
+    <div id="walletForm">
+      <h4>Add Wallet Entry</h4>
+      <input type="text" id="walletValue" placeholder="Enter wallet amount..." />
+      <button id="addWallet">Add</button>
+    </div>
+  </div>
+
+  <div id="combat" class="tab-content">
+    <h3>⚔️ Combat Power</h3>
+    <input type="file" id="combatImage" accept="image/*" />
+    <div id="combatResult"></div>
+  </div>
+
+  <div id="requests" class="tab-content">
+    <h3>📨 Guest Requests</h3>
+    <div id="requestList"></div>
   </div>
 
   <script src="dashboard.js"></script>
