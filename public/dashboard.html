@@ -16,16 +16,21 @@
       <button class="tabBtn adminOnly hidden" data-tab="requestsTab">📨 Requests</button>
     </div>
 
-    <!-- Dashboard Tab -->
-    <section id="dashboardTab" class="tabSection">
-      <h2 class="text-lg mb-2">Announcements</h2>
-      <div id="announcementList" class="space-y-2"></div>
+   <!-- Dashboard Tab -->
+<section id="dashboardTab" class="tabSection">
+  <h2 class="text-lg mb-2">📢 Announcements</h2>
 
-      <div id="adminAnnouncement" class="adminOnly hidden mt-4">
-        <textarea id="announceInput" placeholder="Write announcement..." class="w-full p-2 bg-gray-800 rounded"></textarea>
-        <button id="postAnnouncement" class="bg-blue-600 mt-2 px-3 py-1 rounded">Post Announcement</button>
-      </div>
-    </section>
+  <!-- Announcement list -->
+  <div id="announcementList" class="space-y-3"></div>
+
+  <!-- Admin post area -->
+  <div id="adminAnnouncement" class="adminOnly hidden mt-6 border-t border-gray-700 pt-4">
+    <h3 class="text-md mb-2">Create New Announcement</h3>
+    <textarea id="announceInput" placeholder="Write announcement..." class="w-full p-2 bg-gray-800 rounded mb-2"></textarea>
+    <button id="postAnnouncement" class="bg-blue-600 px-3 py-1 rounded">Post</button>
+  </div>
+</section>
+
 
     <!-- Wallet Tab -->
     <section id="walletTab" class="tabSection hidden">
@@ -82,3 +87,4 @@
 
   <script src="dashboard.js"></script>
 </body>
+
