@@ -173,6 +173,15 @@ app.delete("/combat/:index", (req, res) => {
   writeJSON("combat.json", list);
   res.json({ success: true });
 });//
+// when OCR completes and you push record:
+combats.push({
+  name: req.body.name || "Guest",
+  filename: req.file.filename,
+  combatPower,
+  date: new Date().toISOString()
+});
+writeJSON("combat.json", combats);
+
 
 // =========================
 // Announcements
@@ -226,6 +235,7 @@ app.get("/dashboard.html", (_, res) => res.sendFile(path.join(publicDir, "dashbo
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+
 
 
 
