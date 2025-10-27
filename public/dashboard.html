@@ -46,12 +46,19 @@
     </section>
 
     <!-- Combat Section -->
-    <section id="combat" class="tab hidden">
-      <h2 class="text-lg mb-2">Combat Power Detection</h2>
-      <input type="file" id="combatImage" class="mb-2" />
-      <button id="uploadCombat" class="bg-blue-600 px-3 py-1 rounded">Upload</button>
-      <div id="combatPreview" class="mt-2"></div>
-    </section>
+  <section id="combat" class="tab hidden">
+  <h2 class="text-lg mb-2">Combat Power Detection</h2>
+
+  <input type="file" id="combatImage" class="mb-2" />
+  <button id="uploadCombat" class="bg-blue-600 px-3 py-1 rounded">Upload</button>
+
+  <div id="combatPreview" class="mt-4"></div>
+  <hr class="my-4 border-gray-600">
+
+  <h3 class="text-lg mb-2">Recorded Combat Powers</h3>
+  <div id="combatList"></div>
+</section>
+
 
     <!-- Requests Section -->
     <section id="requests" class="tab hidden adminOnly">
@@ -63,3 +70,4 @@
   <script src="dashboard.js"></script>
 </body>
 </html>
+
