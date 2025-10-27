@@ -1,15 +1,12 @@
 {
-  "name": "combat-dashboard",
+  "name": "wallet-api",
   "version": "1.0.0",
-  "main": "server/server.js",
-  "type": "module",
+  "main": "server.js",
   "scripts": {
-    "start": "node server/server.js"
+    "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "multer": "^2.0.0",
-    "tesseract.js": "^5.0.2",
+    "express": "^4.17.1",
     "cors": "^2.8.5"
   }
 }
