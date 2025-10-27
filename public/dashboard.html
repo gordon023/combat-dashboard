@@ -1,90 +1,103 @@
-<body class="bg-gray-900 text-gray-200 font-sans">
-  <header class="flex justify-between items-center p-4 bg-gray-800 shadow">
-    <h1 class="text-xl font-semibold">Dashboard</h1>
-    <div>
-      <span id="displayUser" class="mr-4"></span>
-      <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded">Logout</button>
-    </div>
-  </header>
-
-  <main class="p-4 space-y-6">
-    <!-- Tabs -->
-    <div class="flex space-x-4">
-      <button class="tabBtn active-tab" data-tab="dashboardTab">📢 Dashboard</button>
-      <button class="tabBtn" data-tab="walletTab">💰 Wallet</button>
-      <button class="tabBtn" data-tab="combatTab">⚔️ Combat</button>
-      <button class="tabBtn adminOnly hidden" data-tab="requestsTab">📨 Requests</button>
-    </div>
-
-   <!-- Dashboard Tab -->
-<section id="dashboardTab" class="tabSection">
-  <h2 class="text-lg mb-2">📢 Announcements</h2>
-
-  <!-- Announcement list -->
-  <div id="announcementList" class="space-y-3"></div>
-
-  <!-- Admin post area -->
-  <div id="adminAnnouncement" class="adminOnly hidden mt-6 border-t border-gray-700 pt-4">
-    <h3 class="text-md mb-2">Create New Announcement</h3>
-    <textarea id="announceInput" placeholder="Write announcement..." class="w-full p-2 bg-gray-800 rounded mb-2"></textarea>
-    <button id="postAnnouncement" class="bg-blue-600 px-3 py-1 rounded">Post</button>
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Dashboard</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --bg:#0b1220;--card:#0f1724;--accent:#0ea5e9;--muted:#9fb4c9;
+    }
+    body{margin:0;background:linear-gradient(135deg,#07103a,#2b0f4a);color:#e6eef8;font-family:Inter,system-ui;min-height:100vh}
+    header{display:flex;justify-content:space-between;align-items:center;padding:18px 28px;background:rgba(8,14,24,0.5);border-bottom:1px solid rgba(255,255,255,0.03)}
+    .brand{display:flex;gap:12px;align-items:center}
+    .tabs{display:flex;gap:8px}
+    .tab{padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.03);cursor:pointer}
+    .tab.active{background:linear-gradient(90deg,var(--accent),#7c3aed);color:#071226}
+    .container{max-width:1100px;margin:22px auto;padding:16px}
+    .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.03)}
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left}
+    .muted{color:var(--muted)}
+    .btn{background:var(--accent);border:none;padding:8px 12px;border-radius:8px;color:#071226;cursor:pointer}
+    .btn.ghost{background:transparent;color:#cbd5e1;border:1px solid rgba(255,255,255,0.04)}
+    img.thumb{max-width:120px;border-radius:6px}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div style="font-weight:700;color:#7dd3fc">⚔ Combat Dashboard</div>
+    <div class="muted" id="userInfo"></div>
   </div>
-</section>
+  <div class="tabs">
+    <div class="tab active" data-tab="dashboardTab">Dashboard</div>
+    <div class="tab" data-tab="walletTab">Wallet</div>
+    <div class="tab" data-tab="combatTab">Combat</div>
+    <div class="tab hidden" id="requestsTabBtn" data-tab="requestsTab">Requests</div>
+    <button class="btn ghost" id="logoutBtn">Logout</button>
+  </div>
+</header>
 
+<div class="container">
+  <!-- Dashboard (Announcements) -->
+  <div id="dashboardTab" class="card">
+    <h3>📢 Announcements</h3>
+    <div id="announcementList" class="muted"></div>
 
-    <!-- Wallet Tab -->
-    <section id="walletTab" class="tabSection hidden">
-      <div class="flex justify-between items-center mb-2">
-        <h2 class="text-lg">Wallet Records</h2>
-        <button id="addWalletBtn" class="bg-green-600 px-3 py-1 rounded">➕ Add Wallet</button>
-      </div>
+    <div id="announcementForm" class="hidden" style="margin-top:12px">
+      <textarea id="announcementText" rows="3" style="width:100%;padding:10px;border-radius:8px;background:#071226;color:#e6eef8;border:1px solid rgba(255,255,255,0.03)"></textarea>
+      <div style="margin-top:8px"><button id="postAnnouncementBtn" class="btn">Post Announcement</button></div>
+    </div>
+  </div>
 
-      <div id="walletForm" class="hidden mb-4">
-        <input id="walletInput" placeholder="Enter wallet details..." class="w-full p-2 bg-gray-800 rounded mb-2">
-        <button id="saveWalletBtn" class="bg-blue-600 px-3 py-1 rounded">Save</button>
-      </div>
+  <!-- Wallet -->
+  <div id="walletTab" class="card hidden" style="margin-top:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3>💰 Wallet</h3>
+      <button id="showAddWallet" class="btn">➕ Add Wallet</button>
+    </div>
 
-      <table class="w-full text-left border-collapse border border-gray-700">
-        <thead>
-          <tr class="bg-gray-800">
-            <th class="p-2 border border-gray-700">Name</th>
-            <th class="p-2 border border-gray-700">Wallet Info</th>
-            <th class="p-2 border border-gray-700">Date</th>
-            <th class="p-2 border border-gray-700">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="walletList"></tbody>
-      </table>
-    </section>
+    <div id="addWalletForm" class="hidden" style="margin-top:12px">
+      <input id="walletInput" placeholder="Enter wallet info" style="width:60%;padding:10px;border-radius:8px;background:#071226;color:#e6eef8;border:1px solid rgba(255,255,255,0.03)" />
+      <button id="addWalletBtn" class="btn" style="margin-left:8px">Add Wallet</button>
+    </div>
 
-    <!-- Combat Tab -->
-    <section id="combatTab" class="tabSection hidden">
-      <h2 class="text-lg mb-2">Combat Power Detection</h2>
-      <input type="file" id="combatImage" class="mb-2">
-      <button id="uploadCombat" class="bg-blue-600 px-3 py-1 rounded">Upload</button>
-      <div id="combatPreview" class="mt-4"></div>
+    <div style="margin-top:12px">
+      <input id="walletFilter" placeholder="Filter by name" style="padding:8px;border-radius:8px;background:#071226;color:#e6eef8;border:1px solid rgba(255,255,255,0.03)" />
+    </div>
 
-      <table class="w-full text-left border-collapse border border-gray-700 mt-4">
-        <thead>
-          <tr class="bg-gray-800">
-            <th class="p-2 border border-gray-700">Name</th>
-            <th class="p-2 border border-gray-700">Combat Power</th>
-            <th class="p-2 border border-gray-700">Date</th>
-            <th class="p-2 border border-gray-700">Image</th>
-            <th class="p-2 border border-gray-700">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="combatList"></tbody>
-      </table>
-    </section>
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Wallet Info</th><th>Date</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="walletTable"></tbody>
+    </table>
+  </div>
 
-    <!-- Requests Tab (Admin only) -->
-    <section id="requestsTab" class="tabSection hidden">
-      <h2 class="text-lg mb-2">Edit Requests from Guests</h2>
-      <div id="requestList" class="space-y-2"></div>
-    </section>
-  </main>
+  <!-- Combat -->
+  <div id="combatTab" class="card hidden" style="margin-top:14px">
+    <h3>⚔ Combat Power Detection</h3>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="file" id="combatImage" accept="image/*" />
+      <button id="uploadCombatBtn" class="btn">Upload & Detect</button>
+    </div>
+    <div id="combatPreview" style="margin-top:12px"></div>
 
-  <script src="dashboard.js"></script>
+    <table style="margin-top:12px">
+      <thead><tr><th>Name</th><th>Combat Power</th><th>Date</th><th>Image</th><th>Actions</th></tr></thead>
+      <tbody id="combatTable"></tbody>
+    </table>
+  </div>
+
+  <!-- Requests -->
+  <div id="requestsTab" class="card hidden" style="margin-top:14px">
+    <h3>📨 Guest Requests</h3>
+    <div id="requestList"></div>
+  </div>
+</div>
+
+<script src="dashboard.js"></script>
 </body>
-
+</html>
