@@ -7,6 +7,11 @@ app.use(express.json());
 
 let walletData = []; // In-memory wallet data
 
+// Root route
+app.get('/', (req, res) => {
+  res.send('Wallet API is running');
+});
+
 // Get all wallets
 app.get('/wallets', (req, res) => {
   res.json(walletData);
