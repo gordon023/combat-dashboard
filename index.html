@@ -84,20 +84,18 @@
 </table>
 
 <script>
-  const API_URL = 'https://combat-dashboard-2.onrender.com'; //  <-- Replace with your backend URL
+ /  <-- Replace with your backend URL
+const API_URL = 'https://combat-dashboard-2.onrender.com';
 
-  let walletData = [];
-
-  // Fetch wallets and render
-  function fetchWallets() {
-    fetch(`${API_URL}/wallets`)
-      .then(res => res.json())
-      .then(data => {
-        walletData = data;
-        renderWallets();
-      })
-      .catch(err => console.error('Error fetching wallets:', err));
-  }
+function fetchWallets() {
+  fetch(`${API_URL}/wallets`)
+    .then(res => res.json())
+    .then(data => {
+      walletData = data;
+      renderWallets();
+    })
+    .catch(err => console.error('Error fetching wallets:', err));
+}
 
   // Render wallet data in table
   function renderWallets() {
