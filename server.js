@@ -124,7 +124,32 @@ app.delete("/requests/:index", (req, res) => {
   r.splice(parseInt(req.params.index), 1);
   writeJSON("requests.json", r);
   res.json({ success: true });
+}); // update 
+app.get("/request", (req, res) => res.json(readJSON("requests.json")));
+
+app.post("/request", (req, res) => {
+  const list = readJSON("requests.json");
+  list.push({ ...req.body, date: new Date() });
+  writeJSON("requests.json", list);
+  res.json({ success: true });
 });
+
+app.post("/request/approve/:i", (req, res) => {
+  const list = readJSON("requests.json");
+  list.splice(req.params.i, 1);
+  writeJSON("requests.json", list);
+  res.json({ success: true, message: "Approved and removed from list." });
+});
+
+app.post("/request/deny/:i", (req, res) => {
+  const list = readJSON("requests.json");
+  list.splice(req.params.i, 1);
+  writeJSON("requests.json", list);
+  res.json({ success: true, message: "Denied and removed from list." });
+});
+
+
+
 //combat
 app.get("/combat", (req, res) => res.json(readJSON("combat.json")));
 app.delete("/combat/:index", (req, res) => {
@@ -132,7 +157,7 @@ app.delete("/combat/:index", (req, res) => {
   list.splice(parseInt(req.params.index), 1);
   writeJSON("combat.json", list);
   res.json({ success: true });
-});
+});//
 
 
 // ---------- serve static pages ----------
@@ -141,5 +166,7 @@ app.get("/dashboard.html", (_, res) => res.sendFile(path.join(publicDir, "dashbo
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+
+
 
 
